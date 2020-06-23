@@ -1,26 +1,67 @@
-import React from 'react';
-import logo from './logo.svg';
+  import React, { Component } from 'react';
 import './App.css';
+import { getHeidenHeimInfo } from './api/weatherInfo';
+import SimpleDayInfo from './components/simpleDayInfo';
+import { getDateFromEpochTs } from './dateUtils'
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+export default class App extends Component{
+  state = {
+    data: null,
+    loading: true,
+    error: null,
+  }
+
+  async componentDidMount () {
+    try {
+      const response = await getHeidenHeimInfo();
+      const jsonData = await response.json()
+      this.setState({
+        data: jsonData,
+        loading: false,
+        error: null,
+      })
+    } catch (error) {
+      this.setState({
+        loading: false,
+        error: error,
+        data: null,
+      })
+    }
+  }
+
+  render () {
+    const { loading, data, error } = this.state
+    if (loading) {
+      return (
+        <p>weatherInfo loading</p>
+      )
+    }
+
+    if (error) {
+      return (
+      <div>Error fetching data {this.state.error.toString()}</div>
+      )
+    }
+
+    return (
+      <div className="App">
+        <header className="App-header">
+            Weather Info for {data.daily.length} days for Heidenheim
+            <p>
+            {data.daily.map((o, i) => (
+              <SimpleDayInfo 
+                date={getDateFromEpochTs(o.dt)}
+                tempDay={o.temp.day}
+                tempNight={o.temp.night}
+                feelsDay={o.feels_like.day}
+                feelsNight={o.feels_like.night}
+                clouds={o.clouds}
+                windSpeed={o.wind_speed}
+              />
+            ))}
+            </p>
+        </header>
+      </div>
+    )
+  }
 }
-
-export default App;
